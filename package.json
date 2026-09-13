@@ -1,0 +1,13 @@
+{
+  "name": "nagar-drishti-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "mobile": "npm --prefix mobile start",
+    "mobile:android": "npm --prefix mobile run android",
+    "mobile:web": "npm --prefix mobile run web",
+    "web": "npm --prefix web run dev",
+    "backend": "python -m uvicorn backend.app.main:app --reload --port 8000",
+    "test:backend": "python -m pytest backend/tests"
+  }
+}
