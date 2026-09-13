@@ -1,0 +1,45 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Environments & Local DB
+.venv/
+venv/
+ENV/
+env/
+.env
+.env.local
+*.db
+*.sqlite3
+
+# Node & Frontend
+node_modules/
+dist/
+build/
+.next/
+.expo/
+*.tsbuildinfo
+
+# AI & Data
+ai/models/*.pt
+ai/models/*.onnx
+ai/dataset/images/train/
+ai/dataset/images/val/
+ai/dataset/labels/train/
+ai/dataset/labels/val/
+runs/
+wandb/
+
+# Uploaded user content
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log

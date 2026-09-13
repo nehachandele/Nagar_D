@@ -14,16 +14,16 @@ from app.models.audit_log import ComplaintStatusHistory
 from app.services.auth_service import get_password_hash
 
 def seed_database():
-    print("🌱 Initializing database schema...")
+    print("[*] Initializing database schema...")
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
 
     try:
         # Check if already seeded
         if db.query(Department).first():
-            print("Database already contains data. Skipping department creation.")
+            print("[*] Database already contains data. Skipping department creation.")
         else:
-            print("Inserting default Municipal Departments...")
+            print("[*] Inserting default Municipal Departments...")
             departments = [
                 Department(name="Road Infrastructure", code="ROADS", description="Maintenance of city roads, potholes, pavements, and dividers.", contact_email="roads@nagardrishti.gov.in"),
                 Department(name="Solid Waste Management", code="WASTE", description="Garbage collection, public bins, and sanitation maintenance.", contact_email="waste@nagardrishti.gov.in"),
@@ -33,11 +33,11 @@ def seed_database():
             ]
             db.add_all(departments)
             db.commit()
-            print("✓ 5 Municipal Departments inserted.")
+            print("[+] 5 Municipal Departments inserted.")
 
         # Check users
         if not db.query(User).filter(User.email == "admin@nagardrishti.gov.in").first():
-            print("Inserting default municipal accounts...")
+            print("[*] Inserting default municipal accounts...")
             roads_dept = db.query(Department).filter(Department.code == "ROADS").first()
             waste_dept = db.query(Department).filter(Department.code == "WASTE").first()
 
@@ -76,11 +76,11 @@ def seed_database():
             ]
             db.add_all(users)
             db.commit()
-            print("✓ Admin, Officer, and Citizen accounts created.")
+            print("[+] Admin, Officer, and Citizen accounts created.")
 
         # Check sample complaints
         if db.query(Complaint).count() == 0:
-            print("Inserting sample civic complaints for immediate testing...")
+            print("[*] Inserting sample civic complaints for immediate testing...")
             citizen = db.query(User).filter(User.role == "citizen").first()
             roads_dept = db.query(Department).filter(Department.code == "ROADS").first()
             waste_dept = db.query(Department).filter(Department.code == "WASTE").first()
@@ -160,9 +160,9 @@ def seed_database():
                 )
                 db.add_all([hist1, hist2, hist3])
                 db.commit()
-            print("✓ Sample complaints and audit timeline populated.")
+            print("[+] Sample complaints and audit timeline populated.")
 
-        print("🎉 Database seeding completed successfully!")
+        print("[+] Database seeding completed successfully!")
     finally:
         db.close()
 
