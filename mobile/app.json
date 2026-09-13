@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "Nagar Drishti",
+    "slug": "nagar-drishti",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#0F172A"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Nagar Drishti requires camera access to document civic issues like potholes and road damage.",
+        "NSLocationWhenInUseUsageDescription": "Nagar Drishti requires your GPS coordinates to geotag civic complaints for municipal authorities."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0F172A"
+      },
+      "permissions": [
+        "CAMERA",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    }
+  }
+}
