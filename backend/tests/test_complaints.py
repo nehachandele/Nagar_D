@@ -19,15 +19,19 @@ def test_create_and_fetch_complaint():
     token = get_auth_token()
     headers = {"Authorization": f"Bearer {token}"}
 
+    # Generate a unique coordinate so it doesn't collide with existing tests
+    test_lat = 19.0760
+    test_lng = 72.8777
+
     # 1. Create Complaint via JSON
     payload = {
         "title": "Severe pothole near college gate",
         "description": "Around 30cm deep hole",
         "category": "Pothole",
         "severity": "high",
-        "latitude": 18.5204,
-        "longitude": 73.8567,
-        "address": "College Gate Road, Pune"
+        "latitude": test_lat,
+        "longitude": test_lng,
+        "address": "College Gate Road, Mumbai"
     }
 
     res = client.post("/api/v1/complaints/json", json=payload, headers=headers)
@@ -44,24 +48,28 @@ def test_create_and_fetch_complaint():
     assert get_res.json()["id"] == comp_id
 
     # 3. Get Nearby
-    nearby_res = client.get(f"/api/v1/complaints/nearby?lat=18.5204&lng=73.8567&radius=500")
+    nearby_res = client.get(f"/api/v1/complaints/nearby?lat={test_lat}&lng={test_lng}&radius=500")
     assert nearby_res.status_code == 200
     items = nearby_res.json()
     assert len(items) >= 1
-    assert items[0]["complaint"]["id"] == comp_id
+    assert any(item["complaint"]["id"] == comp_id for item in items)
 
 def test_duplicate_detection_linking():
     token = get_auth_token()
     headers = {"Authorization": f"Bearer {token}"}
+
+    # Unique isolated coordinate for this pair
+    base_lat = 21.1458
+    base_lng = 79.0882
 
     # First complaint
     c1_res = client.post("/api/v1/complaints/json", json={
         "title": "Pothole near junction",
         "category": "Pothole",
         "severity": "high",
-        "latitude": 18.5210,
-        "longitude": 73.8570,
-        "address": "Junction Point"
+        "latitude": base_lat,
+        "longitude": base_lng,
+        "address": "Isolated Junction Point"
     }, headers=headers)
     c1 = c1_res.json()
 
@@ -70,9 +78,9 @@ def test_duplicate_detection_linking():
         "title": "Another report of pothole",
         "category": "Pothole",
         "severity": "high",
-        "latitude": 18.52108,
-        "longitude": 73.85705,
-        "address": "Junction Point"
+        "latitude": base_lat + 0.00008,
+        "longitude": base_lng + 0.00005,
+        "address": "Isolated Junction Point"
     }, headers=headers)
     c2 = c2_res.json()
 
