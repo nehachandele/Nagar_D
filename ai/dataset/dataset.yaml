@@ -1,0 +1,18 @@
+# YOLOv8 Dataset Configuration for Nagar Drishti Civic Damage Detection
+path: ../dataset
+train: images/train
+val: images/val
+test: images/test
+
+# Number of classes
+nc: 7
+
+# Class names
+names:
+  0: Pothole
+  1: Garbage
+  2: Road Damage
+  3: Water Leakage
+  4: Broken Streetlight
+  5: Encroachment
+  6: Other Infrastructure Damage
