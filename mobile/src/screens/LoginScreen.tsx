@@ -10,8 +10,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Modal,
 } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 import { authService, initApiClient, updateApiBaseUrl, getCurrentApiBaseUrl } from '../api/client';
 
@@ -28,12 +29,77 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, onLoginSuc
   const [serverUrlInput, setServerUrlInput] = useState('');
   const [activeServerUrl, setActiveServerUrl] = useState('');
 
+  // Forgot Password State
+  const [forgotModalVisible, setForgotModalVisible] = useState(false);
+  const [forgotStep, setForgotStep] = useState<1 | 2>(1);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [resetToken, setResetToken] = useState('');
+  const [resetNewPassword, setResetNewPassword] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+
   useEffect(() => {
     initApiClient().then((url) => {
       setActiveServerUrl(url);
       setServerUrlInput(url);
     });
   }, []);
+
+  const handleOpenForgotModal = () => {
+    setForgotEmail(email);
+    setForgotStep(1);
+    setResetToken('');
+    setResetNewPassword('');
+    setForgotModalVisible(true);
+  };
+
+  const handleRequestResetToken = async () => {
+    if (!forgotEmail.trim()) {
+      Alert.alert('Required', 'Please enter your account email.');
+      return;
+    }
+    try {
+      setResetLoading(true);
+      const res = await authService.requestPasswordReset(forgotEmail.trim());
+      if (res.reset_token) {
+        setResetToken(res.reset_token);
+      }
+      setForgotStep(2);
+      Alert.alert(
+        'Reset Token Generated',
+        res.reset_token
+          ? `In demo/development mode, your reset token is:\n\n${res.reset_token}\n\nIt has been automatically filled for you.`
+          : 'Please check your email for the reset instructions.'
+      );
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Failed to request reset token.');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleConfirmReset = async () => {
+    if (!resetToken.trim() || !resetNewPassword.trim()) {
+      Alert.alert('Required', 'Please enter both the reset token and new password.');
+      return;
+    }
+    if (resetNewPassword.length < 6) {
+      Alert.alert('Validation Error', 'Password must be at least 6 characters long.');
+      return;
+    }
+    try {
+      setResetLoading(true);
+      await authService.confirmPasswordReset(resetToken.trim(), resetNewPassword);
+      setPassword(resetNewPassword);
+      setEmail(forgotEmail.trim());
+      setForgotModalVisible(false);
+      Alert.alert('Success', 'Password has been reset successfully! You can now log in.');
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Failed to reset password.');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
 
   const handleSaveServerUrl = async (urlToSave?: string) => {
     const target = urlToSave || serverUrlInput;
@@ -122,7 +188,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, onLoginSuc
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Password</Text>
+            <View style={styles.passwordLabelRow}>
+              <Text style={styles.label}>Password</Text>
+              <TouchableOpacity onPress={handleOpenForgotModal}>
+                <Text style={styles.forgotPasswordLink}>Forgot Password?</Text>
+              </TouchableOpacity>
+            </View>
             <TextInput
               style={styles.input}
               placeholder="••••••••"
@@ -156,9 +227,105 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, onLoginSuc
           </View>
         </View>
 
+        {/* Forgot Password Modal */}
+        <Modal visible={forgotModalVisible} transparent animationType="slide">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalCard}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Reset Account Password</Text>
+                <TouchableOpacity onPress={() => setForgotModalVisible(false)}>
+                  <Ionicons name="close" size={24} color={COLORS.textSecondary} />
+                </TouchableOpacity>
+              </View>
+
+              {forgotStep === 1 ? (
+                <>
+                  <Text style={styles.modalSub}>
+                    Enter your registered email address to receive a secure password reset token.
+                  </Text>
+                  <Text style={styles.modalInputLabel}>Email Address</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    value={forgotEmail}
+                    onChangeText={setForgotEmail}
+                    placeholder="citizen@example.com"
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                  />
+
+                  <View style={styles.modalButtonsRow}>
+                    <TouchableOpacity
+                      style={styles.cancelBtn}
+                      onPress={() => setForgotModalVisible(false)}
+                    >
+                      <Text style={styles.cancelBtnText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.saveBtn}
+                      onPress={handleRequestResetToken}
+                      disabled={resetLoading}
+                    >
+                      {resetLoading ? (
+                        <ActivityIndicator color="#FFF" />
+                      ) : (
+                        <Text style={styles.saveBtnText}>Get Reset Token</Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.modalSub}>
+                    Enter the reset token along with your desired new password.
+                  </Text>
+
+                  <Text style={styles.modalInputLabel}>Reset Token</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    value={resetToken}
+                    onChangeText={setResetToken}
+                    placeholder="Paste or enter reset token"
+                    autoCapitalize="none"
+                  />
+
+                  <Text style={styles.modalInputLabel}>New Password</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    value={resetNewPassword}
+                    onChangeText={setResetNewPassword}
+                    placeholder="Min. 6 characters"
+                    secureTextEntry
+                  />
+
+                  <View style={styles.modalButtonsRow}>
+                    <TouchableOpacity
+                      style={styles.cancelBtn}
+                      onPress={() => setForgotStep(1)}
+                    >
+                      <Text style={styles.cancelBtnText}>Back</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.saveBtn}
+                      onPress={handleConfirmReset}
+                      disabled={resetLoading}
+                    >
+                      {resetLoading ? (
+                        <ActivityIndicator color="#FFF" />
+                      ) : (
+                        <Text style={styles.saveBtnText}>Reset Password</Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
+            </View>
+          </View>
+        </Modal>
+
+
         {/* Server Endpoint Bar & Config Toggle */}
         <View style={styles.serverInfoCard}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.serverInfoHeader}
             onPress={() => setShowServerConfig(!showServerConfig)}
           >
@@ -168,10 +335,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, onLoginSuc
                 API: {activeServerUrl || 'Loading...'}
               </Text>
             </View>
-            <MaterialCommunityIcons 
-              name={showServerConfig ? "chevron-up" : "cog-outline"} 
-              size={18} 
-              color={COLORS.textSecondary} 
+            <MaterialCommunityIcons
+              name={showServerConfig ? "chevron-up" : "cog-outline"}
+              size={18}
+              color={COLORS.textSecondary}
             />
           </TouchableOpacity>
 
@@ -196,19 +363,19 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, onLoginSuc
 
               <Text style={styles.presetLabel}>Quick Presets:</Text>
               <View style={styles.presetRow}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.presetPill}
                   onPress={() => handleSaveServerUrl('http://localhost:8000/api/v1')}
                 >
                   <Text style={styles.presetPillText}>USB (localhost)</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.presetPill}
                   onPress={() => handleSaveServerUrl('http://192.168.1.9:8000/api/v1')}
                 >
                   <Text style={styles.presetPillText}>Wi-Fi (192.168.1.9)</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.presetPill}
                   onPress={() => handleSaveServerUrl('http://10.0.2.2:8000/api/v1')}
                 >
@@ -445,4 +612,89 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: COLORS.primary,
   },
+  passwordLabelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  forgotPasswordLink: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.primary,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 18,
+    padding: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: COLORS.dark,
+  },
+  modalSub: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    marginBottom: 12,
+    lineHeight: 18,
+  },
+  modalInputLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
+    marginBottom: 6,
+    marginTop: 8,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: COLORS.dark,
+    backgroundColor: '#F8FAFC',
+  },
+  modalButtonsRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+    marginTop: 20,
+  },
+  cancelBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  cancelBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+  },
+  saveBtn: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 8,
+  },
+  saveBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFF',
+  },
 });
+

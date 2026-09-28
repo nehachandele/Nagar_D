@@ -14,7 +14,8 @@ export type ComplaintStatus =
   | 'assigned'
   | 'in_progress'
   | 'resolved'
-  | 'rejected';
+  | 'rejected'
+  | 'withdrawn';
 
 export interface StatusHistoryItem {
   id: number;

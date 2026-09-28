@@ -1,6 +1,6 @@
 import axios, { AxiosError } from 'axios';
 import { CONFIG, loadSavedApiBaseUrl, saveApiBaseUrl } from '../constants/config';
-import { Complaint, User, AIClassificationResult, NearbyComplaintItem } from '../types';
+import { Complaint, User, AIClassificationResult, NearbyComplaintItem, StatusHistoryItem } from '../types';
 
 let authToken: string | null = null;
 
@@ -82,6 +82,50 @@ export const authService = {
       throw new Error(formatErrorMessage(err));
     }
   },
+
+  requestPasswordReset: async (email: string): Promise<{ message: string; reset_token: string | null }> => {
+    try {
+      const res = await api.post('/auth/password-reset/request', { email });
+      return res.data;
+    } catch (err: any) {
+      throw new Error(formatErrorMessage(err));
+    }
+  },
+
+  confirmPasswordReset: async (token: string, newPassword: string): Promise<{ message: string }> => {
+    try {
+      const res = await api.post('/auth/password-reset/confirm', {
+        token,
+        new_password: newPassword,
+      });
+      return res.data;
+    } catch (err: any) {
+      throw new Error(formatErrorMessage(err));
+    }
+  },
+};
+
+export const userService = {
+  updateProfile: async (data: { full_name?: string; phone_number?: string }): Promise<User> => {
+    try {
+      const res = await api.patch('/users/me/profile', data);
+      return res.data;
+    } catch (err: any) {
+      throw new Error(formatErrorMessage(err));
+    }
+  },
+
+  changePassword: async (currentPassword: string, newPassword: string): Promise<{ message: string }> => {
+    try {
+      const res = await api.post('/users/me/change-password', {
+        current_password: currentPassword,
+        new_password: newPassword,
+      });
+      return res.data;
+    } catch (err: any) {
+      throw new Error(formatErrorMessage(err));
+    }
+  },
 };
 
 export const complaintService = {
@@ -114,6 +158,40 @@ export const complaintService = {
       params: { lat, lng, radius: radiusMeters },
     });
     return res.data;
+  },
+
+  getHistory: async (complaintId: number): Promise<StatusHistoryItem[]> => {
+    const res = await api.get(`/complaints/${complaintId}/history`);
+    return res.data;
+  },
+
+  editComplaint: async (
+    complaintId: number,
+    data: {
+      title?: string;
+      description?: string;
+      category?: string;
+      severity?: string;
+      address?: string;
+      latitude?: number;
+      longitude?: number;
+    }
+  ): Promise<Complaint> => {
+    try {
+      const res = await api.put(`/complaints/${complaintId}`, data);
+      return res.data;
+    } catch (err: any) {
+      throw new Error(formatErrorMessage(err));
+    }
+  },
+
+  withdrawComplaint: async (complaintId: number): Promise<{ message: string }> => {
+    try {
+      const res = await api.delete(`/complaints/${complaintId}`);
+      return res.data;
+    } catch (err: any) {
+      throw new Error(formatErrorMessage(err));
+    }
   },
 };
 

@@ -27,6 +27,7 @@ export const COLORS = {
     in_progress: '#8B5CF6',  // Violet
     resolved: '#10B981',     // Emerald
     rejected: '#EF4444',     // Crimson
+    withdrawn: '#6B7280',    // Gray
   },
 
   // Category Accent Colors
