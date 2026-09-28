@@ -46,8 +46,8 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
       Alert.alert('Registration Successful', 'Welcome to Nagar Drishti!');
       onRegisterSuccess(data);
     } catch (err: any) {
-      const msg = err.response?.data?.detail || 'Registration failed. Try a different email.';
-      Alert.alert('Error', msg);
+      const msg = err.message || 'Registration failed. Try a different email.';
+      Alert.alert('Registration Error', msg);
     } finally {
       setLoading(false);
     }

@@ -1,7 +1,7 @@
 import bcrypt
 from datetime import datetime, timedelta
 from typing import Optional, Union, Any
-from jose import jwt
+from jose import jwt, JWTError
 from app.config import settings
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -29,3 +29,25 @@ def create_access_token(subject: Union[str, Any], role: str, expires_delta: Opti
     }
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
+
+def create_password_reset_token(email: str) -> str:
+    """Generate a short-lived JWT token for password reset (30 min expiry)."""
+    expire = datetime.utcnow() + timedelta(minutes=30)
+    to_encode = {
+        "sub": email,
+        "purpose": "password_reset",
+        "exp": expire,
+    }
+    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+def verify_password_reset_token(token: str) -> Optional[str]:
+    """Verify a password reset token and return the email if valid, None otherwise."""
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        if payload.get("purpose") != "password_reset":
+            return None
+        email: str = payload.get("sub")
+        return email
+    except JWTError:
+        return None
+

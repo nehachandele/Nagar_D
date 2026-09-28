@@ -18,11 +18,22 @@ class ComplaintCreate(ComplaintBase):
     is_ai_verified: Optional[bool] = False
 
 class ComplaintUpdate(BaseModel):
+    """Officer/Admin status transition and reassignment."""
     status: Optional[str] = None
     department_id: Optional[int] = None
     assigned_officer_id: Optional[int] = None
     severity: Optional[str] = None
     comment: Optional[str] = None
+
+class ComplaintEditByUser(BaseModel):
+    """Citizen self-edit — allowed only while status is 'reported'."""
+    title: Optional[str] = Field(None, max_length=200)
+    description: Optional[str] = None
+    category: Optional[str] = None
+    severity: Optional[str] = None
+    address: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 class StatusHistoryResponse(BaseModel):
     id: int
@@ -59,3 +70,12 @@ class ComplaintResponse(ComplaintBase):
 class NearbyComplaintResponse(BaseModel):
     complaint: ComplaintResponse
     distance_meters: float
+
+class PaginatedComplaintResponse(BaseModel):
+    """Paginated list of complaints with metadata."""
+    items: List[ComplaintResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+

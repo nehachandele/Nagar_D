@@ -1,5 +1,5 @@
-import axios from 'axios';
-import { CONFIG } from '../constants/config';
+import axios, { AxiosError } from 'axios';
+import { CONFIG, loadSavedApiBaseUrl, saveApiBaseUrl } from '../constants/config';
 import { Complaint, User, AIClassificationResult, NearbyComplaintItem } from '../types';
 
 let authToken: string | null = null;
@@ -16,6 +16,22 @@ const api = axios.create({
   },
 });
 
+export const updateApiBaseUrl = async (newUrl: string): Promise<string> => {
+  const formatted = await saveApiBaseUrl(newUrl);
+  api.defaults.baseURL = formatted;
+  return formatted;
+};
+
+export const getCurrentApiBaseUrl = (): string => {
+  return (api.defaults.baseURL as string) || CONFIG.API_BASE_URL;
+};
+
+export const initApiClient = async (): Promise<string> => {
+  const url = await loadSavedApiBaseUrl();
+  api.defaults.baseURL = url;
+  return url;
+};
+
 api.interceptors.request.use((config) => {
   if (authToken) {
     config.headers.Authorization = `Bearer ${authToken}`;
@@ -23,22 +39,48 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+const formatErrorMessage = (err: any): string => {
+  if (axios.isAxiosError(err)) {
+    if (err.response) {
+      // Server returned error status (4xx, 5xx)
+      return err.response.data?.detail || err.response.data?.message || `Server returned error status ${err.response.status}`;
+    } else if (err.request) {
+      // Request made but no response received (Network error / unreachable host)
+      const currentUrl = api.defaults.baseURL || CONFIG.API_BASE_URL;
+      return `Network Error: Unable to reach backend server at ${currentUrl}. Please check host IP / server settings.`;
+    }
+  }
+  return err.message || 'An unexpected error occurred.';
+};
+
 export const authService = {
   login: async (email: string, password: string) => {
-    const res = await api.post('/auth/login', { email, password });
-    setAuthToken(res.data.access_token);
-    return res.data;
+    try {
+      const res = await api.post('/auth/login', { email, password });
+      setAuthToken(res.data.access_token);
+      return res.data;
+    } catch (err: any) {
+      throw new Error(formatErrorMessage(err));
+    }
   },
 
   register: async (payload: { email: string; password: string; full_name: string; phone_number?: string }) => {
-    const res = await api.post('/auth/register', payload);
-    setAuthToken(res.data.access_token);
-    return res.data;
+    try {
+      const res = await api.post('/auth/register', payload);
+      setAuthToken(res.data.access_token);
+      return res.data;
+    } catch (err: any) {
+      throw new Error(formatErrorMessage(err));
+    }
   },
 
   getCurrentUser: async (): Promise<User> => {
-    const res = await api.get('/auth/me');
-    return res.data;
+    try {
+      const res = await api.get('/auth/me');
+      return res.data;
+    } catch (err: any) {
+      throw new Error(formatErrorMessage(err));
+    }
   },
 };
 

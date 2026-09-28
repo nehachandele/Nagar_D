@@ -15,7 +15,7 @@ const CATEGORY_ICONS: Record<ComplaintCategory, keyof typeof MaterialCommunityIc
   Garbage: 'trash-can-outline',
   'Road Damage': 'traffic-cone',
   'Water Leakage': 'water-pump',
-  'Broken Streetlight': 'lightbulb-alert-outline',
+  'Broken Streetlight': 'lightbulb-on-outline',
   Encroachment: 'home-alert-outline',
   Other: 'alert-circle-outline',
 };

@@ -4,8 +4,11 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User
 from app.schemas.auth import Token, LoginRequest, RegisterRequest
-from app.schemas.user import UserResponse
-from app.services.auth_service import verify_password, get_password_hash, create_access_token
+from app.schemas.user import UserResponse, PasswordResetRequest, PasswordResetConfirm
+from app.services.auth_service import (
+    verify_password, get_password_hash, create_access_token,
+    create_password_reset_token, verify_password_reset_token,
+)
 from app.api.deps import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -84,3 +87,63 @@ def login_form(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = D
 @router.get("/me", response_model=UserResponse)
 def read_current_user(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+# ─── PASSWORD RESET FLOW ──────────────────────────────────────────────
+
+@router.post("/password-reset/request", status_code=status.HTTP_200_OK)
+def request_password_reset(
+    payload: PasswordResetRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Request a password reset token.
+    In production, this token would be emailed to the user.
+    For development, the token is returned directly in the response.
+    """
+    user = db.query(User).filter(User.email == payload.email).first()
+    if not user:
+        # Return success even if user not found to prevent email enumeration
+        return {
+            "message": "If a user with that email exists, a reset token has been generated.",
+            "reset_token": None,
+        }
+
+    token = create_password_reset_token(user.email)
+
+    # In production: send email with token/link here
+    # For dev/demo: return token directly
+    return {
+        "message": "Password reset token generated. In production, this would be emailed.",
+        "reset_token": token,
+    }
+
+
+@router.post("/password-reset/confirm", status_code=status.HTTP_200_OK)
+def confirm_password_reset(
+    payload: PasswordResetConfirm,
+    db: Session = Depends(get_db),
+):
+    """
+    Confirm password reset using the token received via email (or API in dev).
+    Sets a new password for the user.
+    """
+    email = verify_password_reset_token(payload.token)
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired password reset token.",
+        )
+
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found.",
+        )
+
+    user.hashed_password = get_password_hash(payload.new_password)
+    db.commit()
+
+    return {"message": "Password has been reset successfully. You can now log in with your new password."}
+

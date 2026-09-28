@@ -167,7 +167,7 @@ export const TrackIssueScreen: React.FC<TrackIssueScreenProps> = ({ route, navig
               <View style={styles.duplicateBox}>
                 <Ionicons name="git-merge-outline" size={16} color="#B45309" />
                 <Text style={styles.duplicateText}>
-                  Linked with existing complaint #{selectedComplaint.duplicate_of_id} (Geospatial & Image Match {Math.round(selectedComplaint.duplicate_score * 100)}%).
+                  Linked with existing complaint #{selectedComplaint.duplicate_of_id} (Geospatial & Image Match {Math.round((selectedComplaint.duplicate_score || 0) * 100)}%).
                 </Text>
               </View>
             )}

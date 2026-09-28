@@ -23,13 +23,23 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0F172A"
       },
+      "usesCleartextTraffic": true,
       "permissions": [
         "CAMERA",
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE"
-      ]
-    }
+      ],
+      "package": "com.neha_chandele.nagardrishti"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "7a75f4c9-a6e6-4e83-b774-019bd2455de0"
+      }
+    },
+    "plugins": [
+      "expo-font"
+    ]
   }
 }
